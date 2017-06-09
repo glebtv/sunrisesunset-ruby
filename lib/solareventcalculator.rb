@@ -111,8 +111,10 @@ class SolarEventCalculator
     sunTrueLong = compute_sun_true_longitude(meanAnomaly)
     cosineSunLocalHour = compute_cosine_sun_local_hour(sunTrueLong, zenith)
 
-    if(cosineSunLocalHour > BigDecimal.new("1") || cosineSunLocalHour < BigDecimal.new("-1"))
-      return nil
+    if cosineSunLocalHour > BigDecimal.new("1")
+      return :never_rises
+    elsif cosineSunLocalHour < BigDecimal.new("-1")
+      return :never_sets
     end
 
     sunLocalHour = compute_local_hour_angle(cosineSunLocalHour, isSunrise)
@@ -160,7 +162,11 @@ class SolarEventCalculator
   end
 
   def convert_to_datetime(time)
-    DateTime.parse("#{@date.strftime}T#{time.hour}:#{time.min}:00+0000") unless time == nil
+    if time.nil? || time.is_a?(Symbol)
+      nil
+    else
+      DateTime.parse("#{@date.strftime}T#{time.hour}:#{time.min}:00+0000")
+    end
   end
 
   def compute_civil_sunrise(timezone)
@@ -196,6 +202,7 @@ class SolarEventCalculator
   end
 
   def put_in_timezone(utcTime, timezone)
+    return utcTime if utcTime.nil? || utcTime.is_a?(Symbol)
     tz = TZInfo::Timezone.get(timezone)
     # puts "UTCTime #{utcTime}"
     local = utcTime + get_utc_offset(timezone)
